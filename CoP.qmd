@@ -1,0 +1,734 @@
+---
+title: "Willing to Pay: A Reasonable Choice Approach"
+author: "John D'Attoma"
+institute: "W&I Strategy and Solutions, Team 3"
+format:
+  revealjs: 
+    #theme: simple
+    slide-number: true
+    chalkboard: 
+      buttons: false
+    preview-links: auto
+    #css: custom.css
+    navigation: True
+    controls: true
+    navigation-mode: vertical
+    citations-hover: true
+    reference-location: document
+    transition: slide
+    smaller: True
+title-slide-attributes:
+  data-background-image: /background.png
+  data-background-opacity: "0.5"
+bibliography: bib.bib
+editor: visual
+output:
+  revealjs::revealjs_presentation:
+    output_dir: "/Users/johndattoma/Dropbox/CoP"
+---
+
+
+```{r}
+knitr::write_bib("knitr", "JohnD.Master.bib")
+```
+
+```{r setup, include=FALSE}
+# Load necessary package
+library(tibble)
+library(tidyr)
+library(tidyverse)
+library(readstata13)
+library(ggthemes)
+library(data.table)
+setwd("/Users/johndattoma/Dropbox/CoP")
+WTP <- read.dta13("/Users/johndattoma/Dropbox/ERC Shared Folder/Willing to Pay Final?/Edited/Final WTP Book/WTP.Books.Long.drops.dta", generate.factors = T, nonint.factors = T)
+
+# Create the dataframe
+tax_data <- tribble(
+  ~Country, ~Tax_Gap, ~Revenue_Loss,
+  "Italy", "27%", 108257000000,
+  "UK", "6.4%", 48000000000,
+  "Sweden", "8%", 10000000000,
+  "US", "18-19%", 485000000000
+)
+
+# Modify column names
+colnames(tax_data) <- c("Country", "Tax Gap", "Revenue Loss")
+
+```
+
+## The Tax Gap by Country
+
+### Why such big differences?
+
+```{r}
+knitr::kable(head(tax_data)[,c("Country", "Tax Gap", "Revenue Loss")])
+```
+
+## Why do people pay taxes or cooperate at all?
+
+### Cultural View
+
+-   "Egocentric Greek has himself to blame for the crisis" -- Handelsblat, Netherlands
+-   "Honest in the North, Sneaky in the South"  -- Frankfurter Allgemeine, Germany\
+-   "The euro zone is confronted with a crisis of not just labor cost and prices--but culture." -- Alan Greenspan
+
+## Classical Economics View
+
+-   Rational Choice tax compliance model (Sandmo et. al.), Homo-Economicus People only pay because they "have to." Each individual conducts and implicit cost/benefit calculation on each choice.
+-   Humans are:
+    -   Autonomous
+    -   Rational
+    -   Utility maximizers
+
+## A Reasonable Choice approach
+
+-   Humans are Social Animals
+    -   Norms matter
+-   We have Moral Preferences
+    -   Values matter
+-   Humans are Imperfectly Rational
+    -   Cognitive need for (explanations)
+    -   But Cognitively Biased --
+
+## Why experiments, and specifically lab experiments?
+
+-   In the real world people in different countries face different fiscal systems. In the laboratory we can use the same system to see how different population groups behave differently.
+
+-   IF we find variation with constant institutions (we do) then we can begin to manipulate the context and/or rules (instruments') to hopefully uncover what explains these variations.
+
+## Laboratory Experiments
+
+### Merits and Objections
+#### PRO:
+
+-   Laboratory can be a controlled environment.
+-   Experiments can be incentivized.
+-   Experimenter can concentrate on specific variables.
+
+#### On the other hand:
+
+-   Labs are not "real."
+-   Subject pools are largely students.
+-   External (uncontrolled) context may bias results.
+
+## Two Basic Questions
+
+1.  What is common across countries?
+2.  What are the differences between countries?
+
+-   Self-Interest
+    -   Incentives and disincentives
+-   Norms
+    -   What do I think "others" will do and what do they expect of me?
+-   Values
+    -   Values --(What should I do?)
+
+3.  A note on gender (if there is time)
+
+## Baseline Experiment
+
+1.  Tax Compliance / Public Good Experiment:
+
+-   A real effort experiment -- clerical task
+-   Three stages where we elicit tax compliance under different conditions.
+
+2.  Social Value Orientation (SVO) exercise
+
+3.  Questionnaire (basic questions drawn from International Public Opinion Surveys).
+
+4.  4 countries, 12 locations, \~2,500 subjects
+
+## Examples
+
+![](Steinmo_D'Attoma_Chapter%202.Fig.1%20Clerical.png){.absolute .fragment data-fragment-index="1" top="200" left="0" width="350" height="300"}
+
+![](Steinmo_D'Attoma_Chapter%202.Fig.3%20Reporting%20Screen.jpg){.absolute .fragment data-fragment-index="2" top="50" right="50" width="450" height="250"}
+
+![](Steinmo_D'Attoma_Chapter%202.Fig.4.jpg){.absolute .fragment data-fragment-index="3" bottom="0" right="50" width="300" height="300"} ![](example.png){.absolute .fragment data-fragment-index="4" left="350" bottom="50" width="300" height="300"}
+
+# Stage 1: Willing to pay?
+
+-   30% tax rate for rounds 1-3
+-   Round I: Pure compliance -- no redistribution
+-   Round II: Tax revenue collected into a "general fund" and redistributed equally among all participants
+-   Round III: Revenue collected into the general fund is doubled and equally redistributed among all participants
+-   Audit rate 5% ; Fine for under-reporting 2x tax
+
+## Willing to Pay -- When you get something
+
+```{r}
+select_vec_1 <- sort(unique(WTP$period))[1:3]
+WTP_select_1 <-WTP[which(WTP$period %in% select_vec_1), ]
+WTP_dt = data.table(WTP_select_1) 
+WTP_dt<-WTP_dt[, .("compliance"=mean(y, na.rm=T), "sd" = sd(y, na.rm = T), "sqrt_N"=sqrt(.N)), by = .(period, country)]
+WTP_dt[, sd_sqrt:= sd/sqrt_N]
+WTP_plot<-complete.cases(WTP_dt)
+WTP_plot<-as.data.frame(WTP_dt)
+#png("Chap2.Fig4b.jpeg",width = 8, height = 8, units= "in", res=800)
+ggplot(WTP_plot, aes(x=WTP_plot$country, y=compliance, fill=WTP_plot$country), na.rm=T) +   facet_grid(~period)+
+  geom_bar(position = "dodge", stat = "identity", 
+           size=.2) +
+  geom_errorbar(aes(ymin = compliance - sd_sqrt, ymax = compliance + sd_sqrt), 
+                size=.9, width=.2, position=position_dodge(.9))+
+  geom_text(aes(x=country, y=compliance, label = round(compliance, digits = 2)),
+            position = position_dodge(width = 1),
+            vjust = 3, size = 6, color = "white", fontface = "bold")+
+  theme_fivethirtyeight()+
+  theme(legend.position = "none",
+        legend.key.width = unit(3, "cm"),
+        legend.title = element_blank(),
+        legend.text = element_text(family="serif", size=27, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=18, color = "black", face = "bold"),
+        axis.text = element_text(family="serif", size=14, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=22, color = "black", face = "bold"),
+        strip.text.x = element_text(family="serif", size=12, color = "black", face = "bold")) +
+  scale_x_discrete(labels = c("Italy","U.K.", "U.S.", "Sweden")) +
+  scale_y_continuous(breaks = c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9), labels = c("0%","10%","20%","30%","40%","50%","60%","70%","80%","90%")) +
+  scale_fill_brewer(palette = "Blues")+
+  ylab("Tax Compliance Rate") +
+  xlab("")+
+  ggtitle("Average Compliance Rate in Rounds 1-3 by Country")
+
+```
+
+# Stage 2: Tax Rates
+
+-   Round IV: Participants pay 10% tax on reported earnings.
+-   Round V: Participants pay 30% tax on reported earnings.
+-   Round VI: Participants pay 50% tax on reported earnings.
+-   In each case, all revenues collected are put into a "general fund" which is doubled and redistributed equally to all participants.
+-   Audit rate 5% ; Fine for under-reporting 2x tax
+
+------------------------------------------------------------------------
+
+## How do tax rates affect compliance?
+
+```{r}
+## Graph 5b Average Compliance rate in Round 4 -6 by country###
+select_vec_1 <- sort(unique(WTP$period))[4:6]
+WTP_select_1 <-WTP[which(WTP$period %in% select_vec_1), ]
+WTP_dt = data.table(WTP_select_1) 
+WTP_dt<-WTP_dt[, .("compliance"=mean(y, na.rm=T), "sd" = sd(y, na.rm = T), "sqrt_N"=sqrt(.N)), by = .(period, country)]
+WTP_dt[, sd_sqrt:= sd/sqrt_N]
+WTP_plot<-complete.cases(WTP_dt)
+WTP_plot<-as.data.frame(WTP_dt)
+ggplot(WTP_plot, aes(x=country, y=compliance, fill=country), na.rm=T) +   facet_grid(~period)+
+  geom_bar(position = "dodge", stat = "identity", 
+           size=.2) +
+  geom_errorbar(aes(ymin = compliance - sd_sqrt, ymax = compliance + sd_sqrt), 
+                size=.9, width=.2, position=position_dodge(.9))+
+  geom_text(aes(x=country, y=compliance, label = round(compliance, digits = 2)),
+            position = position_dodge(width = 1),
+            vjust = 3, size = 6, color = "white", fontface = "bold")+
+  theme_fivethirtyeight()+
+  theme(legend.position = "none",
+        legend.key.width = unit(3, "cm"),
+        legend.title = element_blank(),
+        legend.text = element_text(family="serif", size=27, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=18, color = "black", face = "bold"),
+        axis.text = element_text(family="serif", size=14, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=22, color = "black", face = "bold"),
+        strip.text.x = element_text(family="serif", size=12, color = "black", face = "bold")) +
+  scale_x_discrete(labels = c("Italy","U.K.", "U.S.", "Sweden")) +
+  scale_y_continuous(breaks = c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9), labels = c("0%","10%","20%","30%","40%","50%","60%","70%","80%","90%")) +
+  scale_fill_brewer(palette = "Blues")+
+  ylab("Tax Compliance Rate") +
+  xlab("")+
+  ggtitle("Average Compliance Rate in Rounds 4-6 by Country")
+```
+
+## Key Take Away
+
+-   Institutions and incentives matter.
+-   Increasing the return on the public good, increases compliance, so does lowering taxes to an extent. 
+-   However, the return on the public good is more important than tax rates. 
+-   People in different countries respond differently to the incentives and institutions.
+-   Swedes and Italians respond the most to increased redistibution, while Brits and Americans respond the least.
+-   Italians are the most sensitive to increasing tax rates.
+
+# Norms and Social Behavior
+
+-   Humans are social creatures who most humans frame their own actions in the context of others' behavior.
+-   Our decisions are often led by the desire to conform to the tastes and beliefs of others [@elster1993political; @cialdini2004social].
+-   Varied rules and norms are enforced differently in different societies.
+-   People comply with social norms even in situations where there is complete anonymity and where social punishment is not an option [@fehr2004third].
+-   We choose to follow formal rules if we believe that others are doing the same.
+
+------------------------------------------------------------------------
+
+## How much with other contribute?
+
+```{r}
+WTP_dt = data.table(WTP) 
+WTP_dt<-WTP_dt[, .("compliance"=mean(y, na.rm=T), "sd" = sd(y, na.rm = T), "sqrt_N"=sqrt(.N)), by = .(think_others_report)]
+WTP_dt[, sd_sqrt:= sd/sqrt_N]
+WTP_plot<-as.data.frame(WTP_dt)
+#jpeg("Chap2.Fig8a.jpeg",width = 8, height = 8, units= "in", res=800)
+ggplot(WTP_plot, aes(x=as.factor(think_others_report), y=compliance, fill="blue"))+ 
+  geom_bar(position = position_dodge(), stat = "identity", 
+           colour="black", size=.2) +
+  geom_errorbar(aes(ymin = compliance - sd_sqrt, ymax = compliance + sd_sqrt), 
+                size=.9, width=.2, position=position_dodge(.9))+
+  geom_text(aes(x=think_others_report, y=compliance, label = round(compliance, digits = 2)),
+            position = position_dodge(width = 1),
+            vjust = 3, size = 11, color = "white", fontface = "bold")+theme_fivethirtyeight()+
+  theme(legend.position = "off",
+        legend.key.width = unit(3, "cm"),
+        legend.title = element_text(family="serif", size=22, color = "black", face = "bold"),
+        legend.text = element_text(family="serif", size=27, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=18, color = "black", face = "bold"),
+        axis.text = element_text(family="serif", size=14, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=22, color = "black", face = "bold")) +
+  scale_x_discrete(labels = c("Total","Less","Much Less")) +
+  scale_y_continuous(breaks = c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9), labels = c("0%","10%","20%","30%","40%","50%","60%","70%","80%","90%")) +
+  scale_fill_brewer(palette = "Blues")+
+  ylab("Average Compliance Rate") +
+  xlab("Think Others Report")+
+  ggtitle("Average Compliance Rate by Perception of Other's Reporting Behavior")
+```
+
+## Norms by Country
+
+```{r}
+WTP <- WTP %>%
+  group_by(country) %>%
+  mutate(n = n()) %>%
+  group_by(country, think_others_report) %>%
+  summarise(share = sum(n()),
+            n = mean(n),
+            share = share / n)
+WTP <- WTP[!is.na(WTP$think_others_report),]
+WTP$seq <- seq(0,.70, length.out = nrow(WTP))
+
+#jpeg("Chap2.Fig8b.jpeg",width = 8, height = 8, units= "in", res=800)
+ggplot(WTP, aes(x = country, y = share, fill = think_others_report)) +
+  geom_hline(yintercept = seq(0,0.7,0.10), color = "gray94", size = 0.5) +
+  geom_hline(yintercept = seq(0.05,.7,0.1), color = "gray94", size = 0.25) +
+  geom_bar(stat = "identity", position = "dodge", color="black") +
+  geom_text(aes(label = paste0(sprintf("%1.1f",round(share, digits = 1)))),
+            colour = "black", position = position_dodge(0.9), vjust = 2, size = 6,family="serif", fontface = "bold") +
+  scale_fill_brewer(guide = guide_legend(title = "Perceived Amount of Total Earnings Reported by Fellow Participants", title.position = "top", hjust = 0.5)) +
+  ylab("Percentage of respondents") +
+  xlab("") +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(1, "cm"),
+        legend.title = element_text(family="serif", size=12, color = "black", face = "bold"),
+        legend.text = element_text(family="serif", size=12, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=18, color = "black", face = "bold"),
+        axis.text = element_text(family="serif", size=14, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=22, color = "black", face = "bold"))+
+  ggtitle("Perception of Others' Reporting Behavior by Country")
+```
+
+## A note about averages:
+
+### They can be misleading, especially when talking about cultural differences.
+
+```{r}
+
+library(grid)  # Load the grid package for rasterGrob
+library(gridExtra)  # Load gridExtra for grid.arrange
+library(png)  # Load png for readPNG
+
+# Your ggplot code
+WTP <- read.dta13("/Users/johndattoma/Dropbox/ERC Shared Folder/Willing to Pay Final?/Edited/Final WTP Book/WTP.Books.Long.drops.dta", generate.factors = T, nonint.factors = T)
+p=ggplot(WTP, aes(x=y, fill=country)) +   
+  geom_histogram(binwidth=0.1, position="identity", alpha=0.7) +  # Adjust binwidth to your liking
+  facet_wrap(~country, ncol = 2) +  # Modified line
+  theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key.width = unit(3, "cm"),
+        legend.title = element_blank(),
+        legend.text = element_text(family="serif", size=27, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=18, color = "black", face = "bold"),
+        axis.text = element_text(family="serif", size=10, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=15, color = "black", face = "bold"),
+        strip.text.x = element_text(family="serif", size=12, color = "black", face = "bold")) +
+  scale_y_continuous(labels=scales::percent_format(scale=1)) +
+  scale_x_continuous(breaks = seq(0, 1, by=0.1), labels = scales::percent_format(scale=1)) +
+  labs(x="Compliance Rate", y="Count", title="Distribution of the Compliance Rate by Country")
+
+
+# Save your ggplot to a file
+ggsave(filename = "your_plot.png", plot = p, width = 6, height = 6)
+
+# Read in your image and saved plot
+img <- readPNG("figure_distribution.png")
+your_plot <- readPNG("your_plot.png")
+
+# Convert to grid grobs
+img_grob <- rasterGrob(img)
+plot_grob <- rasterGrob(your_plot)
+
+# Open a PNG device
+png(filename = "combined_plot.png", width = 1200, height = 700)  # Adjust width and height to your liking
+
+# Combine side-by-side and plot
+grid.arrange(img_grob, plot_grob, ncol = 2)
+
+
+# Combine side-by-side and save as a new image
+combined_plot <- grid.arrange(img_grob, plot_grob, ncol = 2)
+```
+
+![](combined_plot.png){.absolute top="200" left="0" width="900" height="400"}
+
+# The Social Value Orientation Index
+
+"Choose how much you will receive and how much"the other" will receive."
+
+![](Picture1.png){.absolute top="200" left="0" width="900" height="400"}
+
+## Distribution of values
+
+![](svo2.png){.absolute top="100" left="100" width="800" height="500"}
+
+## By Country
+
+![](svo1.png){.absolute top="100" left="100" width="800" height="500"}
+
+## How do values affect compliance?
+
+```{r}
+WTP <- read.dta13("/Users/johndattoma/Dropbox/ERC Shared Folder/Willing to Pay Final?/Edited/Final WTP Book/WTP.Books.Long.drops.dta", generate.factors = T, nonint.factors = T)
+WTP_dt = data.table(WTP) 
+WTP_dt<-WTP_dt[, .("compliance"=mean(y, na.rm=T), "sd" = sd(y, na.rm = T), "sqrt_N"=sqrt(.N)), by = .(period, prosocial)]
+WTP_dt[, sd_sqrt:= sd/sqrt_N]
+WTP_plot<-as.data.frame(WTP_dt)
+#jpeg("Chap2.Fig9a.jpeg",width = 8, height = 8, units= "in", res=800)
+ggplot(WTP_plot, aes(x=as.factor(period), y=compliance, fill = as.factor(prosocial))) + 
+  geom_bar(position = position_dodge(), stat = "identity", size=.2)+
+  geom_errorbar(aes(ymin = compliance - sd_sqrt, ymax = compliance + sd_sqrt), 
+                size=.9, width=.2, position=position_dodge(.9))+
+  geom_text(aes(x=period, y=compliance, label = round(compliance, digits = 2)),
+            position = position_dodge(width = 1),
+            vjust = 3, size = 4.5, color = "white", fontface = "bold", show.legend = F)+theme_fivethirtyeight()+
+  theme(legend.position = "bottom",
+        legend.key.width = unit(1, "cm"),
+        legend.title = element_text(family="serif", size=10, color = "black", face = "bold"),
+        legend.text = element_text(family="serif", size=27, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=18, color = "black", face = "bold"),
+        axis.text = element_text(family="serif", size=14, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        plot.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=15, color = "black", face = "bold"),
+        panel.background = element_blank()) +
+  scale_x_discrete(labels = c("R1","R2" ,"R3", "R4","R5", "R6", "R7", "R8", "R9")) +
+  scale_y_continuous(breaks = c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9), labels = c("0%","10%","20%","30%","40%","50%","60%","70%","80%","90%")) +
+  scale_fill_brewer(palette="Blues", name = "",labels = c("Individualist", "Prosocial"))+
+  ylab("Tax Compliance Rate") +
+  xlab("Experimental rounds")+
+  ggtitle("SVO on Compliance")
+
+```
+
+## By Country
+
+```{r}
+##by country 
+WTP_dt = data.table(WTP) 
+WTP_dt<-WTP_dt[, .("compliance"=mean(y, na.rm=T), "sd" = sd(y, na.rm = T), "sqrt_N"=sqrt(.N)), by = .(country, prosocial)]
+WTP_dt[, sd_sqrt:= sd/sqrt_N]
+WTP_plot<-as.data.frame(WTP_dt)
+#jpeg("Chap2.Fig9b.jpeg",width = 8, height = 8, units= "in", res=800)
+ggplot(WTP_plot, aes(x=as.factor(country), y=compliance, fill = as.factor(prosocial))) + 
+  geom_bar(position = position_dodge(), stat = "identity", size=.2)+
+  geom_errorbar(aes(ymin = compliance - sd_sqrt, ymax = compliance + sd_sqrt), 
+                size=.9, width=.2, position=position_dodge(.9))+
+  geom_text(aes(x=country, y=compliance, label = round(compliance, digits = 2)),
+            position = position_dodge(width = 1),
+            vjust = 3, size = 6, color = "white", fontface = "bold", show.legend = F)+theme_fivethirtyeight()+
+  theme(legend.position = "",
+        legend.key.width = unit(1, "cm"),
+        legend.title = element_text(family="serif", size=10, color = "black", face = "bold"),
+        legend.text = element_text(family="serif", size=27, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=18, color = "black", face = "bold"),
+        axis.text = element_text(family="serif", size=14, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        plot.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=15, color = "black", face = "bold"),
+        panel.background = element_blank()) +
+  scale_y_continuous(breaks = c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9), labels = c("0%","10%","20%","30%","40%","50%","60%","70%","80%","90%")) +
+  scale_fill_brewer(palette = "Blues", name = "",labels = c("Individualist", "Prosocial"))+
+  ylab("Tax Compliance Rate") +
+  xlab("Country") +
+  ggtitle("SVO on Compliance by Country")
+
+```
+
+# Institutions: Is this just a political economy story?
+
+```{r}
+evasion_data <- tribble(
+  ~Country, ~`% of workers who are Self-employed`, ~`Estimated Evasion by the Self-employed`,
+  "Italy", "25.1%", "60%",
+  "UK", "14.6%", "NA",
+  "Sweden", "10.5%", "30%",
+  "USA", "6.8%", "25%"
+)
+
+
+knitr::kable(head(evasion_data)[,c("Country", "% of workers who are Self-employed", "Estimated Evasion by the Self-employed")])
+```
+
+See [@kleven2011unwilling]
+
+## Institutions: Value for your money
+
+```{r}
+
+myData <- read.csv("/Users/johndattoma/Dropbox/ERC Shared Folder/Books/WGI_csv/WGIData.csv", check.names = F)
+myData <- myData[myData$`Country Name` == "United States" | myData$`Country Name` == "United Kingdom" |
+                   myData$`Country Name` == "Sweden" | myData$`Country Name` == "Italy",-22]
+variables <- list(colnames(myData[,5:21]))
+myData <- reshape(myData,
+                  varying = variables,
+                  v.names = "score",
+                  timevar = "year",
+                  times = c("1996", "1998", "2000", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015"),
+                  new.row.names = 1:10000,
+                  direction = "long")
+myData$measure <- gsub(":.*", "", myData$`Indicator Name`)
+myData$type <- gsub(".*:", "", myData$`Indicator Name`)
+myData <- myData[,-c(2,3:4,7)]
+myData <- reshape(myData,
+                  timevar = "type",
+                  idvar = c("Country Name","year","measure"),
+                  direction = "wide")
+colnames(myData)[1] <- "country"
+colnames(myData)[4] <- "estimate"
+colnames(myData)[5] <- "sources"
+colnames(myData)[6] <- "rank"
+colnames(myData)[7] <- "rankLow"
+colnames(myData)[8] <- "rankUp"
+colnames(myData)[9] <- "stdErr"
+myData$country <- factor(myData$country, levels = c("Italy","United Kingdom","United States","Sweden"))
+
+# 2) Quality of Government 2 ----------------------------------------------
+plotData <- myData[myData$year == 2015 & (myData$measure != "Political Stability and Absence of Violence/Terrorism" & myData$measure != "Rule of Law"),]
+plotData$seq <- seq(0,100,length.out = nrow(plotData))
+plotData$country <- as.character(plotData$country)
+plotData$country[plotData$country == "United Kingdom"] <- "UK"
+plotData$country[plotData$country == "United States"] <- "US"
+plotData$country <- factor(plotData$country, levels = c("Italy","UK","US","Sweden"))
+
+#jpeg("Chap2.Fig7a.jpeg",width = 8, height = 8, units= "in", res=800)
+ggplot(plotData, aes(x = measure, y= rank, fill = country)) +
+  geom_hline(yintercept = seq(0,100,20), color = "gray94", size = 0.5) +
+  geom_hline(yintercept = seq(10,100,20), color = "gray94", size = 0.25) +
+  geom_bar(stat = "identity", position = "dodge", color = "black") + theme_fivethirtyeight()+
+  theme(legend.position = "bottom",
+        legend.key.width = unit(2, "cm"),
+        legend.title= element_blank(),
+        legend.text = element_text(family="serif", size=11, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=11, color = "black", face = "bold"),
+        axis.text.y = element_text(family="serif", size=11, color = "black", face = "bold"),
+        axis.text.x = element_text(family="serif", size=11, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        strip.background=element_rect(fill="#636363", color = "black"),
+        plot.title = element_text(hjust = 0.5, family="serif", size=15, color = "black", face = "bold"),
+        strip.text = element_text(family="serif", size=11, color = "black")) +
+  scale_y_continuous(breaks = seq(0,100,20)) +
+  scale_fill_brewer()+
+  geom_text(data = plotData,
+            aes(label = paste0(sprintf("%1.1f",round(rank, digits = 1)))),
+            colour = "white", position = position_dodge(0.9), vjust = 2, size = 5,family="serif", fontface = "bold") +
+  ylab("Percentile rank among all countries") +
+  xlab("") +
+  ggtitle("Quality of Government Index")
+
+```
+
+## Quality of Government over time
+
+```{r}
+plotData <- myData[(myData$measure != "Political Stability and Absence of Violence/Terrorism" & myData$measure != "Rule of Law"),]
+plotData$year <- as.numeric(plotData$year)
+plotData$country <- as.character(plotData$country)
+plotData$country[plotData$country == "United Kingdom"] <- "UK"
+plotData$country[plotData$country == "United States"] <- "US"
+plotData$country <- factor(plotData$country, levels = c("Italy","UK","US","Sweden"))
+plotData <- plotData %>%
+  group_by(measure) %>%
+  mutate(seq = seq(-0.5,2.5, length.out = n()))
+
+
+
+#jpeg("Chap2.Fig7b.jpeg",width = 8, height = 8, units= "in", res=800)
+ggplot(plotData, aes(x = year, y = estimate, color = country)) +
+  geom_hline(yintercept = seq(-.5,2.5,0.5), color = "gray94", size = 0.5) +
+  geom_hline(yintercept = seq(-.25,2.5,0.5), color = "gray94", size = 0.25) +
+  geom_vline(xintercept = seq(1996,2015,1 ),color = "gray94", size = 0.5) +
+  geom_line(size = .7) +
+  geom_point(alpha = 0.3, size = 1.5) +
+  facet_wrap(~measure, ncol = 2) +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(3, "cm"),
+        legend.title = element_blank(),
+        legend.text = element_text(family="serif", size=11, color = "black", face = "bold"),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=11, color = "black", face = "bold"),
+        axis.text.y = element_text(family="serif", size=11, color = "black", face = "bold"),
+        axis.text.x = element_text(family="serif", size=11, color = "black", face = "bold"),
+        axis.ticks = element_line(size = .5),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=15, color = "black", face = "bold"),
+        strip.text = element_text(family="serif", size=11, color = "black", face = "bold")) +
+  scale_y_continuous(breaks = c(-.5,0,.5,1,1.5,2,2.5)) +
+  scale_x_continuous(breaks = c(1996,1998,2000,2002,2004,2006,2008,2010,2012,2015)) +
+  scale_fill_brewer()+
+  scale_color_brewer()+
+  ylab("Estimate of governance") +
+  xlab("") +
+  ggtitle("Quality of Government Index Over Time")
+```
+
+## Institutions over time
+
+Self-interest 
+
+- Institutions ➡️ behavior. 
+
+Norms
+
+- Behavior over time ➡️ cognitive bias' 
+
+Values 
+
+- Norm/bias' over time ➡️ beliefs/values.
+
+# Bringing it back to distributions
+
+```{r}
+library(RColorBrewer)
+
+# Function for normal distribution
+normal_curve <- function(x, mean = 0, sd = 1) {
+  sqrt(1 / (2 * pi * sd^2)) * exp(-((x - mean)^2) / (2 * sd^2))
+}
+
+# Create ggplot
+gg <- ggplot(data.frame(x = c(-5, 5)), aes(x = x)) +
+      stat_function(fun = normal_curve, args = list(mean = -0.5, sd = 1), aes(fill = "Society A"), geom = "area", alpha = 1) +
+      stat_function(fun = normal_curve, args = list(mean = 0.5, sd = 1), aes(fill = "Society B"), geom = "area", alpha = 0.5) +
+  stat_function(fun = normal_curve, args = list(mean = -0.5, sd = 1), geom = "line", aes(color = "blue"), size = 0.5) +
+      stat_function(fun = normal_curve, args = list(mean = 0.5, sd = 1), geom = "line", aes(color = "blue"), size = 0.5) +
+      scale_fill_brewer(palette = "Blues", direction = -1) +
+      scale_x_continuous(breaks = c(-3, 3), labels = c("Individualist", "Prosocial")) +
+      geom_text(aes(x = -1.5, y = 0.4, label = "Society A"), color = "black") +
+      geom_text(aes(x = 1.5, y = 0.4, label = "Society B"), color = "black") +
+      theme_minimal() +
+      theme(legend.position = "none",
+            axis.title.x = element_blank(),
+            axis.title.y = element_blank(),
+            strip.text = element_text(family="serif", size=11, color = "black", face = "bold"),
+            axis.text.y = element_blank())
+
+print(gg)
+
+
+
+
+```
+
+# A Note on gender {auto-animate="true" auto-animate-easing="ease-in-out"}
+
+```{r}
+
+WTP <- read.dta13("/Users/johndattoma/Dropbox/ERC Shared Folder/Willing to Pay Final?/Edited/Final WTP Book/WTP.Books.Long.drops.dta", generate.factors = T, nonint.factors = T)
+WTP_dt = data.table(WTP) 
+WTP_dt<-WTP_dt[, .("compliance"=mean(y, na.rm=T), "sd" = sd(y, na.rm = T), "sqrt_N"=sqrt(.N)), by = .(country, male)]
+WTP_dt[, sd_sqrt:= sd/sqrt_N]
+WTP_plot<-as.data.frame(WTP_dt)
+#jpeg("Conc.Fig1a.jpeg",width = 8, height = 8, units= "in", res=800)
+ggplot(WTP_plot, aes(x=country, y=compliance, fill=male))+
+  geom_bar(position = position_dodge(), stat = "identity", 
+           colour="black", size=.5) +
+  geom_errorbar(aes(ymin = compliance - sd_sqrt, ymax = compliance + sd_sqrt), 
+                size=.9, width=.2, position=position_dodge(.9))+
+  geom_text(aes(x=country, y=compliance, label = round(compliance, digits = 2)),
+            position = position_dodge(width = 1),
+            vjust = 3, size = 6, color = "white", fontface = "bold")+theme_fivethirtyeight()+
+  theme(legend.position = "none",
+        legend.key.width = unit(1, "cm"),
+        legend.title = element_blank(),
+        legend.text = element_text(family="serif", size=10, color = "black", face = "bold"),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-15,-15,-15,-15),
+        axis.line = element_line(size = 1),
+        axis.title = element_text(family="serif", size=18, color = "black", face = "bold"),
+        axis.text = element_text(family="serif", size=14, color = "black", face = "bold"),
+        axis.ticks = element_line(size = 1),
+        axis.text.x = element_text(hjust = 1),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, family="serif", size=22, color = "black", face = "bold")) +
+  scale_y_continuous(breaks = c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9), labels = c("0%","10%","20%","30%","40%","50%","60%","70%","80%","90%")) +
+  scale_fill_brewer(palette = "Blues")+
+  ylab("Tax Compliance Rate") +
+  xlab("")+
+  ggtitle("Gender and Tax Compliance by Country")
+
+```
+
+# {background-color="black" background-image="rubare.jpg" background-size="500px"}
+
+# Questions {auto-animate="true" auto-animate-easing="ease-in-out"}
+
+::: r-hstack
+::: {data-id="box1" auto-animate-delay="0" style="background: #2780e3; width: 200px; height: 150px; margin: 10px;"}
+:::
+
+::: {data-id="box2" auto-animate-delay="0.1" style="background: #3fb618; width: 200px; height: 150px; margin: 10px;"}
+:::
+
+::: {data-id="box3" auto-animate-delay="0.2" style="background: #e83e8c; width: 200px; height: 150px; margin: 10px;"}
+:::
+:::
+
+## Thank you {auto-animate="true" auto-animate-easing="ease-in-out"}
+
+
+::: r-stack
+::: {data-id="box1" style="background: #2780e3; width: 350px; height: 350px; border-radius: 200px;"}
+:::
+
+::: {data-id="box2" style="background: #3fb618; width: 250px; height: 250px; border-radius: 200px;"}
+:::
+
+::: {data-id="box3" style="background: #e83e8c; width: 150px; height: 150px; border-radius: 200px;"}
+:::
+:::
+
+
+
+
+
+# References
